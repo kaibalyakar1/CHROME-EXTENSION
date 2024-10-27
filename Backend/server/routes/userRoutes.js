@@ -1,5 +1,4 @@
 const express = require("express");
-
 const router = express.Router();
 const {
   registerUser,
@@ -10,22 +9,19 @@ const {
 } = require("../controller/userController.js");
 const { protect } = require("../middleware/auth.js");
 
+// User Registration
 router.post("/register", registerUser);
+
+// User Login
 router.post("/login", loginUser);
+
+// Submit User Details (specific to a user)
 router
-  .route("/details")
+  .route("/:id/details") // Include user ID in the route
   .post(protect, submitUserDetails)
   .get(protect, getUserDetails);
-router.put("/edit", protect, editUser); // New route for editing user details
 
-module.exports = router;
-
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router
-  .route("/details")
-  .post(protect, submitUserDetails)
-  .get(protect, getUserDetails);
-router.put("/edit", protect, editUser); // New route for editing user details
+// Edit User Details (specific to a user)
+router.put("/:id/edit", protect, editUser); // Include user ID in the route
 
 module.exports = router;

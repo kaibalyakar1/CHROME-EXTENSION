@@ -12,10 +12,13 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const user = await User.create({
       name,
       email,
-      password,
+      password: hashedPassword, // Store hashed password
     });
 
     // Generate JWT token
@@ -46,7 +49,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await bcrypt.compare(password, user.password); // Compare with hashed password
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -70,78 +73,16 @@ const loginUser = async (req, res) => {
 // Submit Additional User Details
 const submitUserDetails = async (req, res) => {
   const userId = req.user.id; // Get user ID from JWT token
-  const {
-    age,
-    dob,
-    fatherName,
-    motherName,
-    address,
-    city,
-    state,
-    country,
-    pincode,
-    mobileNumber,
-    secondaryMobileNumber,
-    experienceYears,
-    currentJobTitle,
-    previousJobTitles,
-    companyName,
-    maritalStatus,
-    qualifications,
-    skills,
-    certifications,
-    languages,
-    linkedinProfile,
-    githubProfile,
-    portfolio,
-    website,
-    hobbies,
-    references,
-    expectedSalary,
-    noticePeriod,
-    willingnessToRelocate,
-    availability,
-    previousCompanies,
-  } = req.body;
+  const userDetails = req.body; // Collect all user details from the request body
 
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        age,
-        dob,
-        fatherName,
-        motherName,
-        address,
-        city,
-        state,
-        country,
-        pincode,
-        mobileNumber,
-        secondaryMobileNumber,
-        experienceYears,
-        currentJobTitle,
-        previousJobTitles,
-        companyName,
-        maritalStatus,
-        qualifications,
-        skills,
-        certifications,
-        languages,
-        linkedinProfile,
-        githubProfile,
-        portfolio,
-        website,
-        hobbies,
-        references,
-        expectedSalary,
-        noticePeriod,
-        willingnessToRelocate,
-        availability,
-        previousCompanies,
-      },
-      { new: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(userId, userDetails, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.status(200).json({
       message: "User details updated successfully",
@@ -194,37 +135,7 @@ const getUserDetails = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        age: user.age,
-        dob: user.dob,
-        fatherName: user.fatherName,
-        motherName: user.motherName,
-        address: user.address,
-        city: user.city,
-        state: user.state,
-        country: user.country,
-        pincode: user.pincode,
-        mobileNumber: user.mobileNumber,
-        secondaryMobileNumber: user.secondaryMobileNumber,
-        experienceYears: user.experienceYears,
-        currentJobTitle: user.currentJobTitle,
-        previousJobTitles: user.previousJobTitles,
-        companyName: user.companyName,
-        maritalStatus: user.maritalStatus,
-        qualifications: user.qualifications,
-        skills: user.skills,
-        certifications: user.certifications,
-        languages: user.languages,
-        linkedinProfile: user.linkedinProfile,
-        githubProfile: user.githubProfile,
-        portfolio: user.portfolio,
-        website: user.website,
-        hobbies: user.hobbies,
-        references: user.references,
-        expectedSalary: user.expectedSalary,
-        noticePeriod: user.noticePeriod,
-        willingnessToRelocate: user.willingnessToRelocate,
-        availability: user.availability,
-        previousCompanies: user.previousCompanies,
+        ...user._doc, // Spread operator to get other user details
       },
     });
   } catch (error) {
